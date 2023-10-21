@@ -73,7 +73,24 @@ public abstract class TelnetServer implements Runnable{
             }
         }
     }
-
+    public enum TextStyle{
+    	BOLD("\033[1m"),
+    	DIM("\033[2m"),
+    	UNDERLINE("\033[4m"),
+    	BLINK("\033[5m"),
+    	REVERSE("\033[7m"),
+    	HIDDEN("\033[8m");
+    	
+    	private final String code;
+    	
+    	TextStyle(String code){
+    		this.code=code;
+    	}
+    	
+    	public String getCode() {
+    		return code;
+    	}
+    }
     public enum TextColor{
         BLACK("\033[30m"),
         RED("\033[31m"),
@@ -113,6 +130,9 @@ public abstract class TelnetServer implements Runnable{
         public String getCode() {
             return code;
         }
+    }
+    public void setTextStyle(TextStyle style) {
+    	writeMessageNoLine(style.getCode());
     }
     public void setTextColor(TextColor color) {
         writeMessageNoLine(color.getCode());
