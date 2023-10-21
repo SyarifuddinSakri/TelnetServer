@@ -1,0 +1,139 @@
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+
+public abstract class TelnetServer implements Runnable{
+    public ServerSocket server;
+    public Socket client;
+    public HashMap<String, String>clientList = new HashMap<>();
+    public List<String>clientIp = new ArrayList<>();
+    public PrintWriter writer;
+    public BufferedReader br;
+    public int port;
+    public TelnetServer(int port) {
+        this.port=port;
+    }
+
+    @Override
+    public void run() {
+        try {
+            server = new ServerSocket(port);
+            while(true) {
+                client = server.accept();
+                    try {
+                        br = new BufferedReader(new InputStreamReader(client.getInputStream()));
+                        writer = new PrintWriter(client.getOutputStream());
+                        runAbstraction();
+                    } catch (IOException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                    }
+            }
+        } catch (IOException e) {
+            //if connection is closed this will execute eg: after closeConnection();
+        }
+    }
+    
+    public void writeMessage(String message) {
+        writer.println(message);
+        writer.flush();
+    }
+    public void writeMessageNoLine(String message) {
+        writer.print(message);
+        writer.flush();
+    }
+    public String readMessage() throws IOException {
+        StringBuilder inputBuffer = new StringBuilder(); // Buffer to accumulate characters
+
+        while (true) {
+            char inputChar = (char) br.read(); // Read a single character
+
+            // Handle backspace character
+            if (inputChar == '\b') {
+                // Handle backspace logic
+                writeMessageNoLine("\033[1P");
+//                writeMessageNoLine("\033[P");
+                if (inputBuffer.length() > 0) {
+                    inputBuffer.deleteCharAt(inputBuffer.length() - 1);
+                }
+            } else if (inputChar == '\n' || inputChar == '\r') {
+                // Handle newline character - process the complete line
+                String inputLine = inputBuffer.toString();
+                inputBuffer.setLength(0); // Clear the buffer for the next line
+                return inputLine;
+            } else {
+                // Handle other characters
+                inputBuffer.append(inputChar);
+            }
+        }
+    }
+
+    public enum TextColor{
+        BLACK("\033[30m"),
+        RED("\033[31m"),
+        GREEN("\033[32m"),
+        YELLOW("\033[33m"),
+        BLUE("\033[34m"),
+        MAGENTA("\033[35m"),
+        CYAN("\033[36m"),
+        WHITE("\033[37m");
+
+        private final String code;
+
+        TextColor(String code) {
+            this.code = code;
+        }
+
+        public String getCode() {
+            return code;
+        }
+    }
+    public enum BackGroundColor{
+        BLACK("\033[40m"),
+        RED("\033[41m"),
+        GREEN("\033[42m"),
+        YELLOW("\033[43m"),
+        BLUE("\033[44m"),
+        MAGENTA("\033[45m"),
+        CYAN("\033[46m"),
+        WHITE("\033[47m");
+        
+        private final String code;
+        
+        BackGroundColor(String code){
+            this.code=code;
+        }
+        
+        public String getCode() {
+            return code;
+        }
+    }
+    public void setTextColor(TextColor color) {
+        writeMessageNoLine(color.getCode());
+    }
+    public void setBackGroundColor(BackGroundColor color) {
+        writeMessageNoLine(color.getCode());
+    }
+    public void setColorNormal() {
+        setTextColor(TextColor.WHITE);
+        setBackGroundColor(BackGroundColor.BLACK);
+    }
+    public void clear(){
+        writer.println("\033[2J\033[H");
+        writer.flush();
+    }
+    public void closeConnection() {
+        try {
+            client.close();
+            clientIp.remove(client.getInetAddress().getHostName());
+        } catch (IOException e) {
+        }
+    }
+    public abstract void runAbstraction();
+}
