@@ -67,7 +67,12 @@ public abstract class TelnetServer implements Runnable{
                 String inputLine = inputBuffer.toString();
                 inputBuffer.setLength(0); // Clear the buffer for the next line
                 return inputLine;
-            } else {
+            } else if (inputChar == 3) { //if user pressed Ctrl+C
+                closeConnection();
+            } else if (inputChar == 2) {//if user pressed Ctrl+B
+                ctrlB();
+            }
+            else {
                 // Handle other characters
                 inputBuffer.append(inputChar);
             }
@@ -131,6 +136,25 @@ public abstract class TelnetServer implements Runnable{
             return code;
         }
     }
+    public enum Symbol{
+        SADFACE((char)1),
+        SMILEY((char)2),
+        HEART((char)3),
+        UPANDDOWNARROW((char)17),
+        DOWNARROW((char)19);
+        
+        private final char code;
+        Symbol(char code){
+            this.code=code;
+        }
+        public char getCode() {
+            return code;
+        }
+       
+    }
+    public char putSymbol(Symbol symbol) {
+        return symbol.getCode();
+    }
     public void setTextStyle(TextStyle style) {
     	writeMessageNoLine(style.getCode());
     }
@@ -156,4 +180,5 @@ public abstract class TelnetServer implements Runnable{
         }
     }
     public abstract void runAbstraction();
+    public abstract void ctrlB();
 }
